@@ -4,6 +4,7 @@ import SentimentSummary from './components/SentimentSummary';
 import SentimentChart from './components/SentimentChart';
 import ResultsDisplay from './components/ResultsDisplay';
 import InsightsDisplay from './components/InsightsDisplay';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import './App.css';
 
 function App() {
@@ -132,15 +133,12 @@ function App() {
         {/* Results Section */}
         {results.length > 0 && !loading && (
           <div className="results-section">
-            {/* Sentiment Summary & Chart */}
-            <div className="sentiment-row">
-              <div className="sentiment-summary-box">
-                <SentimentSummary data={sentimentSummary} />
-              </div>
-              <div className="sentiment-chart-box">
-                <SentimentChart data={sentimentSummary} />
-              </div>
-            </div>
+            {/* Analytics Dashboard */}
+            <AnalyticsDashboard 
+              results={results} 
+              sentimentSummary={sentimentSummary}
+              isLoading={loading}
+            />
 
             {/* AI Insights */}
             <InsightsDisplay insights={insights} loading={insightsLoading} />
