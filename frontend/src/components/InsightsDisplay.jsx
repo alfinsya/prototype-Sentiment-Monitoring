@@ -18,196 +18,168 @@ function InsightsDisplay({ insights, loading }) {
   }
 
   const insightsData = insights.insights || {};
-  const sentimentAnalysis = insightsData.sentiment_analysis || {};
-  const engagementAnalysis = insightsData.engagement_analysis || {};
-  const topicsAndKeywords = insightsData.topics_and_keywords || {};
-  const recommendations = insightsData.recommendations || [];
+  const keyInsights = insightsData.key_insights || [];
+  const sentimentKeywords = insightsData.sentiment_keywords || {};
+  const mainProblems = insightsData.main_problems || [];
+  const customerDesires = insightsData.customer_desires || [];
+  const recommendations = insightsData.actionable_recommendations || [];
   const summary = insightsData.summary || {};
 
   return (
     <div className="insights-container">
       <div className="insights-header">
-        <h2>🤖 AI Insights & Recommendations</h2>
-        <p className="insights-timestamp">Generated: {new Date(insightsData.timestamp).toLocaleString()}</p>
+        <h2>🤖 AI Insights & Analysis</h2>
+        <p className="insights-timestamp">
+          Generated: {new Date(insightsData.timestamp).toLocaleString()}
+        </p>
       </div>
 
-      {/* Overall Score */}
-      <div className="insights-overall-score">
-        <div className="score-card">
-          <h3>Overall Analysis Score</h3>
-          <div className="score-value">
-            {(insightsData.overall_score * 100).toFixed(1)}%
-          </div>
-          <p className="score-description">
-            {insightsData.overall_score > 0.7
-              ? '✨ Excellent'
-              : insightsData.overall_score > 0.4
-              ? '👍 Good'
-              : '⚠️ Needs Attention'}
-          </p>
+      {/* Summary Stats */}
+      <div className="insights-summary-stats">
+        <div className="stat-item">
+          <span className="stat-label">Positive</span>
+          <span className="stat-value positive">{summary.positive_percentage || 0}%</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Neutral</span>
+          <span className="stat-value neutral">{summary.neutral_percentage || 0}%</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Negative</span>
+          <span className="stat-value negative">{summary.negative_percentage || 0}%</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Analyzed</span>
+          <span className="stat-value">{summary.total_analyzed || 0}</span>
         </div>
       </div>
 
-      {/* Sentiment Analysis Section */}
-      <div className="insights-section sentiment-section">
-        <h3>📊 Sentiment Trends</h3>
-        <div className="sentiment-grid">
-          <div className="sentiment-stat">
-            <span className="stat-label">Trend Status</span>
-            <span className={`stat-value trend-${sentimentAnalysis.trend_status}`}>
-              {sentimentAnalysis.trend_status?.toUpperCase()}
-            </span>
-          </div>
-          <div className="sentiment-stat">
-            <span className="stat-label">Average Polarity</span>
-            <span className="stat-value">
-              {(sentimentAnalysis.average_polarity || 0).toFixed(3)}
-            </span>
-          </div>
-          <div className="sentiment-stat">
-            <span className="stat-label">Total Analyzed</span>
-            <span className="stat-value">{sentimentAnalysis.total_analyzed || 0}</span>
-          </div>
-        </div>
-
-        {sentimentAnalysis.sentiment_distribution && (
-          <div className="sentiment-distribution">
-            <p className="distribution-title">Sentiment Distribution:</p>
-            <div className="distribution-bars">
-              <div className="distribution-item">
-                <label>Positive</label>
-                <div className="bar-container">
-                  <div
-                    className="bar positive"
-                    style={{
-                      width: `${sentimentAnalysis.sentiment_percentages?.positive || 0}%`,
-                    }}
-                  ></div>
-                </div>
-                <span>{sentimentAnalysis.sentiment_percentages?.positive || 0}%</span>
+      {/* Key Insights / Kesimpulan Utama */}
+      <div className="insights-section key-insights-section">
+        <h3>📌 Key Insights & Conclusions</h3>
+        <div className="insights-list">
+          {keyInsights.map((insight, idx) => (
+            <div key={idx} className="insight-item">
+              <div className="insight-icon">
+                {insight.includes('Strong Market')
+                  ? '📈'
+                  : insight.includes('Concern')
+                  ? '⚠️'
+                  : insight.includes('Positive')
+                  ? '💚'
+                  : insight.includes('Concern Area')
+                  ? '💔'
+                  : insight.includes('Main Issue')
+                  ? '🔴'
+                  : insight.includes('Market Want')
+                  ? '🎯'
+                  : insight.includes('Most Active')
+                  ? '📱'
+                  : '💡'}
               </div>
-              <div className="distribution-item">
-                <label>Neutral</label>
-                <div className="bar-container">
-                  <div
-                    className="bar neutral"
-                    style={{
-                      width: `${sentimentAnalysis.sentiment_percentages?.neutral || 0}%`,
-                    }}
-                  ></div>
-                </div>
-                <span>{sentimentAnalysis.sentiment_percentages?.neutral || 0}%</span>
-              </div>
-              <div className="distribution-item">
-                <label>Negative</label>
-                <div className="bar-container">
-                  <div
-                    className="bar negative"
-                    style={{
-                      width: `${sentimentAnalysis.sentiment_percentages?.negative || 0}%`,
-                    }}
-                  ></div>
-                </div>
-                <span>{sentimentAnalysis.sentiment_percentages?.negative || 0}%</span>
-              </div>
+              <p className="insight-text">{insight}</p>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Engagement Analysis Section */}
-      <div className="insights-section engagement-section">
-        <h3>👥 Engagement Metrics</h3>
-        <div className="engagement-grid">
-          <div className="engagement-stat">
-            <span className="stat-label">Overall Engagement Score</span>
-            <span className="stat-value">
-              {(engagementAnalysis.overall_engagement_score * 100).toFixed(1)}%
-            </span>
-          </div>
-          <div className="engagement-stat">
-            <span className="stat-label">Engagement Level</span>
-            <span className={`stat-value level-${engagementAnalysis.engagement_level}`}>
-              {engagementAnalysis.engagement_level?.toUpperCase()}
-            </span>
-          </div>
-          <div className="engagement-stat">
-            <span className="stat-label">Total Mentions</span>
-            <span className="stat-value">{engagementAnalysis.total_mentions || 0}</span>
-          </div>
-        </div>
-
-        {engagementAnalysis.platform_metrics && Object.keys(engagementAnalysis.platform_metrics).length > 0 && (
-          <div className="platform-breakdown">
-            <p className="breakdown-title">Platform Breakdown:</p>
-            <div className="platforms-list">
-              {Object.entries(engagementAnalysis.platform_metrics).map(([platform, metrics]) => (
-                <div key={platform} className="platform-item">
-                  <div className="platform-name">{platform.toUpperCase()}</div>
-                  <div className="platform-details">
-                    <span className="metric">Posts: {metrics.count}</span>
-                    <span className="metric">Engagement: {(metrics.engagement_score * 100).toFixed(1)}%</span>
-                    <span className="metric">Polarity: {metrics.avg_polarity}</span>
+      {/* What People Are Saying (Sentiment by Keyword) */}
+      {Object.keys(sentimentKeywords).length > 0 && (
+        <div className="insights-section sentiment-keywords-section">
+          <h3>💬 What People Are Saying</h3>
+          <p className="section-description">
+            Breakdown of sentiment by main topics
+          </p>
+          <div className="keywords-grid">
+            {Object.entries(sentimentKeywords)
+              .slice(0, 6)
+              .map(([keyword, data]) => (
+                <div key={keyword} className={`keyword-card sentiment-${data.sentiment}`}>
+                  <div className="keyword-name">{keyword}</div>
+                  <div className="keyword-stats">
+                    <span className="stat positive">✓ {data.positive_pct}%</span>
+                    <span className="stat negative">✗ {data.negative_pct}%</span>
+                  </div>
+                  <div className="keyword-mention">
+                    {data.mentions} mentions
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Topics & Keywords Section */}
-      <div className="insights-section topics-section">
-        <h3>🏷️ Topics & Keywords</h3>
-        <div className="topics-grid">
-          <div className="topics-subsection">
-            <h4>Top Keywords</h4>
-            <div className="keywords-list">
-              {topicsAndKeywords.top_keywords &&
-                topicsAndKeywords.top_keywords.map((keyword, idx) => (
-                  <span key={idx} className="keyword-tag">
-                    {keyword}
-                  </span>
-                ))}
-            </div>
-          </div>
-          <div className="topics-subsection">
-            <h4>Main Topics</h4>
-            <div className="keywords-list">
-              {topicsAndKeywords.main_topics &&
-                topicsAndKeywords.main_topics.map((topic, idx) => (
-                  <span key={idx} className="topic-tag">
-                    {topic}
-                  </span>
-                ))}
-            </div>
           </div>
         </div>
-        <div className="topics-stats">
-          <p>
-            <strong>{topicsAndKeywords.total_unique_keywords || 0}</strong> unique keywords found
-          </p>
-          <p>
-            <strong>{topicsAndKeywords.keyword_mentions || 0}</strong> total keyword mentions
-          </p>
-        </div>
-      </div>
+      )}
 
-      {/* Recommendations Section */}
+      {/* Main Problems / Masalah Utama */}
+      {mainProblems.length > 0 && (
+        <div className="insights-section problems-section">
+          <h3>⚠️ Main Issues to Address</h3>
+          <div className="problems-list">
+            {mainProblems.map((problem, idx) => (
+              <div key={idx} className="problem-item">
+                <div className="problem-header">
+                  <span className="problem-icon">🔴</span>
+                  <h4>{problem.issue}</h4>
+                  <span className="problem-frequency">{problem.frequency} complaints</span>
+                </div>
+                <div className="problem-examples">
+                  {problem.examples.map((example, eIdx) => (
+                    <p key={eIdx} className="example-text">
+                      "{example.substring(0, 100)}..."
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Customer Desires / Apa Yang Diinginkan Customer */}
+      {customerDesires.length > 0 && (
+        <div className="insights-section desires-section">
+          <h3>💡 What Customers Want</h3>
+          <div className="desires-list">
+            {customerDesires.map((desire, idx) => (
+              <div key={idx} className="desire-item">
+                <div className="desire-header">
+                  <span className="desire-icon">🎯</span>
+                  <h4>{desire.type}</h4>
+                  <span className="desire-frequency">{desire.frequency} mentions</span>
+                </div>
+                <div className="desire-examples">
+                  {desire.examples.map((example, eIdx) => (
+                    <p key={eIdx} className="example-text">
+                      "{example.substring(0, 100)}..."
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actionable Recommendations */}
       {recommendations.length > 0 && (
         <div className="insights-section recommendations-section">
-          <h3>💡 Actionable Recommendations</h3>
+          <h3>🎯 Action Items & Recommendations</h3>
           <div className="recommendations-list">
             {recommendations.map((rec, idx) => (
-              <div key={idx} className={`recommendation-card priority-${rec.priority}`}>
+              <div key={idx} className={`recommendation-item priority-${rec.priority.toLowerCase()}`}>
                 <div className="recommendation-header">
                   <h4>{rec.title}</h4>
-                  <span className={`priority-badge ${rec.priority}`}>{rec.priority.toUpperCase()}</span>
+                  <span className={`priority-badge priority-${rec.priority.toLowerCase()}`}>
+                    {rec.priority}
+                  </span>
                 </div>
                 <p className="recommendation-description">{rec.description}</p>
                 <div className="recommendation-action">
-                  <span className="action-label">Action:</span>
-                  <span className="action-text">{rec.action}</span>
+                  <h5>What to do:</h5>
+                  <p>{rec.action}</p>
+                </div>
+                <div className="recommendation-impact">
+                  <span className="impact-label">Expected Impact:</span>
+                  <span className="impact-value">{rec.estimated_impact}</span>
                 </div>
               </div>
             ))}

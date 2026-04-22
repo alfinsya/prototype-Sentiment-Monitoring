@@ -1,15 +1,11 @@
-"""AI Insights Service - Advanced Analytics & Recommendations"""
+"""Enhanced AI Insights Service - Meaningful Conclusions & Patterns"""
 from typing import Dict, List
 from collections import Counter
 import re
 from datetime import datetime
 
 def extract_keywords(text: str, top_n: int = 5) -> List[str]:
-    """
-    Extract keywords from text using simple frequency analysis
-    Removes common stop words
-    """
-    # Common English stop words
+    """Extract keywords from text"""
     stop_words = {
         'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
         'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
@@ -21,260 +17,345 @@ def extract_keywords(text: str, top_n: int = 5) -> List[str]:
         'just', 'very', 'too', 'more', 'most', 'less', 'least', 'such'
     }
     
-    # Convert to lowercase and extract words
     text = text.lower()
     words = re.findall(r'\b[a-z]+\b', text)
-    
-    # Filter out stop words and get top keywords
     filtered_words = [w for w in words if w not in stop_words and len(w) > 2]
     word_freq = Counter(filtered_words)
     
     return [word for word, _ in word_freq.most_common(top_n)]
 
-def analyze_sentiment_trends(results: List[Dict]) -> Dict:
-    """
-    Analyze sentiment trends across results
-    Returns distribution, trends, and insights
-    """
-    if not results:
-        return {'error': 'No results to analyze'}
-    
-    sentiments = [r.get('sentiment', 'unknown') for r in results]
-    polarities = [r.get('polarity', 0) for r in results if r.get('polarity')]
-    
-    # Count sentiments
-    sentiment_counts = {
-        'positive': sentiments.count('positive'),
-        'negative': sentiments.count('negative'),
-        'neutral': sentiments.count('neutral'),
-        'unknown': sentiments.count('unknown')
-    }
-    
-    total = len(results)
-    sentiment_percentages = {
-        k: round((v / total * 100) if total > 0 else 0, 2)
-        for k, v in sentiment_counts.items()
-    }
-    
-    # Calculate polarity statistics
-    avg_polarity = sum(polarities) / len(polarities) if polarities else 0
-    
-    # Trend interpretation
-    positive_ratio = sentiment_counts['positive'] / total if total > 0 else 0
-    trend_status = 'positive' if positive_ratio > 0.6 else 'negative' if positive_ratio < 0.4 else 'neutral'
-    
-    return {
-        'sentiment_distribution': sentiment_counts,
-        'sentiment_percentages': sentiment_percentages,
-        'average_polarity': round(avg_polarity, 3),
-        'trend_status': trend_status,
-        'total_analyzed': total
-    }
 
-def calculate_engagement_metrics(results: List[Dict]) -> Dict:
+def analyze_sentiment_by_keyword(results: List[Dict]) -> Dict:
     """
-    Calculate engagement metrics based on available data
-    Returns engagement scores and platform-specific metrics
+    Analyze sentiment for each keyword
+    Shows what people are saying positive vs negative about
     """
-    if not results:
-        return {'error': 'No results to analyze'}
-    
-    # Analyze by platform
-    platform_metrics = {}
-    total_engagement_score = 0
+    keyword_sentiment = {}
     
     for result in results:
-        platform = result.get('platform', 'unknown')
-        
-        if platform not in platform_metrics:
-            platform_metrics[platform] = {
-                'count': 0,
-                'avg_polarity': 0,
-                'engagement_score': 0,
-                'items': []
-            }
-        
-        platform_metrics[platform]['count'] += 1
-        platform_metrics[platform]['items'].append(result)
-        
-        # Calculate engagement score based on polarity and sentiment
-        polarity = result.get('polarity', 0)
+        text = result.get('text', '') or result.get('description', '')
         sentiment = result.get('sentiment', 'neutral')
         
-        sentiment_weight = {
-            'positive': 1.0,
-            'neutral': 0.5,
-            'negative': 0.3,
-            'unknown': 0.0
-        }.get(sentiment, 0.5)
-        
-        engagement = (polarity + 1) / 2 * sentiment_weight  # Normalize to 0-1
-        platform_metrics[platform]['engagement_score'] += engagement
-        total_engagement_score += engagement
-    
-    # Average metrics per platform
-    for platform in platform_metrics:
-        count = platform_metrics[platform]['count']
-        items = platform_metrics[platform]['items']
-        
-        polarities = [item.get('polarity', 0) for item in items]
-        avg_polarity = sum(polarities) / len(polarities) if polarities else 0
-        
-        platform_metrics[platform]['avg_polarity'] = round(avg_polarity, 3)
-        platform_metrics[platform]['engagement_score'] = round(
-            platform_metrics[platform]['engagement_score'] / count, 3
-        )
-        del platform_metrics[platform]['items']  # Remove items list from response
-    
-    # Overall engagement score
-    total_results = len(results)
-    overall_engagement = round(
-        total_engagement_score / total_results if total_results > 0 else 0, 3
-    )
-    
-    return {
-        'overall_engagement_score': overall_engagement,
-        'engagement_level': 'high' if overall_engagement > 0.7 else 'moderate' if overall_engagement > 0.4 else 'low',
-        'platform_metrics': platform_metrics,
-        'total_mentions': total_results
-    }
-
-def extract_topics_and_keywords(results: List[Dict], top_n: int = 10) -> Dict:
-    """
-    Extract topics and keywords from all results
-    Returns most mentioned topics and keywords
-    """
-    if not results:
-        return {'error': 'No results to analyze'}
-    
-    all_keywords = []
-    text_sources = []
-    
-    # Extract keywords from text and descriptions
-    for result in results:
-        text = result.get('text', '') or result.get('description', '') or result.get('title', '')
         if text:
-            text_sources.append(text)
             keywords = extract_keywords(text, top_n=3)
-            all_keywords.extend(keywords)
+            for keyword in keywords:
+                if keyword not in keyword_sentiment:
+                    keyword_sentiment[keyword] = {
+                        'positive': 0,
+                        'negative': 0,
+                        'neutral': 0,
+                        'mentions': 0
+                    }
+                
+                keyword_sentiment[keyword][sentiment] += 1
+                keyword_sentiment[keyword]['mentions'] += 1
     
-    # Get top keywords
-    keyword_freq = Counter(all_keywords)
-    top_keywords = [word for word, _ in keyword_freq.most_common(top_n)]
+    # Calculate percentages and find dominant sentiment
+    insights = {}
+    for keyword, counts in sorted(keyword_sentiment.items(), 
+                                   key=lambda x: x[1]['mentions'], reverse=True)[:10]:
+        total = counts['mentions']
+        positive_pct = (counts['positive'] / total * 100) if total > 0 else 0
+        negative_pct = (counts['negative'] / total * 100) if total > 0 else 0
+        
+        if positive_pct > 60:
+            dominant = 'positive'
+        elif negative_pct > 60:
+            dominant = 'negative'
+        else:
+            dominant = 'mixed'
+        
+        insights[keyword] = {
+            'mentions': total,
+            'positive': int(counts['positive']),
+            'negative': int(counts['negative']),
+            'neutral': int(counts['neutral']),
+            'positive_pct': round(positive_pct, 1),
+            'negative_pct': round(negative_pct, 1),
+            'sentiment': dominant
+        }
     
-    # Extract topics from titles/descriptions
-    all_titles = [r.get('title', '') for r in results if r.get('title')]
-    topics_text = ' '.join(all_titles)
-    topics = extract_keywords(topics_text, top_n=5)
-    
-    return {
-        'top_keywords': top_keywords,
-        'keyword_frequency': dict(keyword_freq.most_common(top_n)),
-        'main_topics': topics,
-        'total_unique_keywords': len(keyword_freq),
-        'keyword_mentions': sum(keyword_freq.values())
-    }
+    return insights
 
-def generate_recommendations(results: List[Dict], sentiment_summary: Dict) -> List[Dict]:
+
+def extract_problems_and_complaints(results: List[Dict]) -> List[Dict]:
     """
-    Generate AI-powered recommendations based on analysis
-    Returns actionable recommendations
+    Extract main problems and complaints from negative/neutral mentions
+    """
+    complaints = []
+    
+    # Problem keywords
+    problem_keywords = [
+        'problem', 'issue', 'bug', 'error', 'crash', 'fail', 'broken',
+        'not work', 'waste', 'bad', 'worst', 'disappointed', 'poor',
+        'slow', 'expensive', 'expensive', 'overpriced', 'complaint',
+        'complain', 'regret', 'avoid', 'dont buy', 'dont use', 'scam',
+        'fraud', 'cheat', 'misleading', 'false'
+    ]
+    
+    for result in results:
+        text = (result.get('text', '') or result.get('description', '')).lower()
+        sentiment = result.get('sentiment', 'neutral')
+        
+        # Look for complaints in negative or neutral mentions
+        if sentiment in ['negative', 'neutral'] and text:
+            for problem in problem_keywords:
+                if problem in text:
+                    complaints.append({
+                        'issue': problem,
+                        'text': text[:200],
+                        'sentiment': sentiment,
+                        'source': result.get('platform', 'unknown')
+                    })
+                    break
+    
+    # Group complaints by issue
+    issue_counts = Counter([c['issue'] for c in complaints])
+    top_issues = [
+        {
+            'issue': issue,
+            'frequency': count,
+            'examples': [c['text'] for c in complaints if c['issue'] == issue][:2]
+        }
+        for issue, count in issue_counts.most_common(5)
+    ]
+    
+    return top_issues
+
+
+def extract_preferences_and_desires(results: List[Dict]) -> List[Dict]:
+    """
+    Extract what people want or prefer
+    """
+    preferences = []
+    
+    # Preference keywords
+    preference_keywords = [
+        'prefer', 'prefer', 'like', 'love', 'want', 'need', 'recommend',
+        'better', 'best', 'should have', 'wish', 'hope', 'expect',
+        'should', 'would like', 'interested in', 'looking for'
+    ]
+    
+    for result in results:
+        text = (result.get('text', '') or result.get('description', '')).lower()
+        sentiment = result.get('sentiment', 'neutral')
+        
+        # Look for preferences in positive mentions
+        if sentiment in ['positive', 'neutral'] and text:
+            for pref_keyword in preference_keywords:
+                if pref_keyword in text:
+                    # Extract what they prefer
+                    idx = text.find(pref_keyword)
+                    preference_context = text[max(0, idx-20):min(len(text), idx+80)]
+                    
+                    preferences.append({
+                        'preference_type': pref_keyword,
+                        'text': preference_context.strip(),
+                        'full_text': text[:200],
+                        'sentiment': sentiment,
+                        'source': result.get('platform', 'unknown')
+                    })
+                    break
+    
+    # Group preferences
+    pref_types = Counter([p['preference_type'] for p in preferences])
+    top_preferences = [
+        {
+            'type': pref_type,
+            'frequency': count,
+            'examples': [p['full_text'] for p in preferences if p['preference_type'] == pref_type][:2]
+        }
+        for pref_type, count in pref_types.most_common(5)
+    ]
+    
+    return top_preferences
+
+
+def generate_meaningful_insights(results: List[Dict], sentiment_summary: Dict) -> List[str]:
+    """
+    Generate meaningful text insights/conclusions
+    Returns human-readable insights like "Most people prefer X because Y"
+    """
+    insights = []
+    
+    if not results:
+        return insights
+    
+    # 1. Overall sentiment insight
+    positive_pct = sentiment_summary.get('positive_percentage', 0)
+    negative_pct = sentiment_summary.get('negative_percentage', 0)
+    
+    if positive_pct > 70:
+        insights.append(
+            f"📈 Strong Market Interest: {positive_pct}% of mentions show positive sentiment, indicating "
+            f"strong customer interest and satisfaction with the topic/product."
+        )
+    elif negative_pct > 60:
+        insights.append(
+            f"⚠️ Customer Concerns Detected: {negative_pct}% of mentions are negative, suggesting "
+            f"significant issues or concerns that need to be addressed immediately."
+        )
+    elif positive_pct > negative_pct + 10:
+        insights.append(
+            f"✓ Positive Reception: {positive_pct}% positive vs {negative_pct}% negative mentions show "
+            f"a favorable overall reception in the market."
+        )
+    else:
+        insights.append(
+            f"↔️ Mixed Reception: Opinions are balanced ({positive_pct}% positive, {negative_pct}% negative), "
+            f"indicating diverse market perspectives."
+        )
+    
+    # 2. Main topics/keywords insight
+    keyword_sentiment = analyze_sentiment_by_keyword(results)
+    
+    # Find most positively discussed topics
+    positive_topics = [
+        (kw, data) for kw, data in keyword_sentiment.items() 
+        if data['sentiment'] == 'positive'
+    ]
+    
+    if positive_topics:
+        top_positive = positive_topics[0]
+        insights.append(
+            f"💚 Positive Focus: People frequently discuss '{top_positive[0]}' in a positive light "
+            f"({top_positive[1]['positive_pct']}% positive mentions). This is a strong selling point."
+        )
+    
+    # Find most negatively discussed topics
+    negative_topics = [
+        (kw, data) for kw, data in keyword_sentiment.items() 
+        if data['sentiment'] == 'negative'
+    ]
+    
+    if negative_topics:
+        top_negative = negative_topics[0]
+        insights.append(
+            f"💔 Concern Area: '{top_negative[0]}' is frequently mentioned negatively ({top_negative[1]['negative_pct']}% negative). "
+            f"This requires attention and improvement."
+        )
+    
+    # 3. Problems/Complaints insight
+    top_issues = extract_problems_and_complaints(results)
+    
+    if top_issues:
+        main_issue = top_issues[0]
+        insights.append(
+            f"🔴 Main Issue: The most common complaint is '{main_issue['issue']}' "
+            f"(mentioned {main_issue['frequency']} times). Address this to improve satisfaction."
+        )
+    
+    # 4. Preferences/Desires insight
+    top_prefs = extract_preferences_and_desires(results)
+    
+    if top_prefs:
+        main_pref = top_prefs[0]
+        insights.append(
+            f"🎯 Market Want: '{main_pref['type']}' is the most common desire expressed "
+            f"({main_pref['frequency']} mentions). Focus on meeting this need."
+        )
+    
+    # 5. Platform-specific insight
+    platform_counts = Counter([r.get('platform', 'unknown') for r in results])
+    if platform_counts:
+        most_active_platform = platform_counts.most_common(1)[0]
+        insights.append(
+            f"📱 Most Active: {most_active_platform[0]} has the highest mention volume ({most_active_platform[1]} posts). "
+            f"Focus on this platform for maximum reach."
+        )
+    
+    return insights
+
+
+def generate_actionable_recommendations(
+    results: List[Dict], 
+    sentiment_summary: Dict,
+    keyword_insights: Dict
+) -> List[Dict]:
+    """
+    Generate specific, actionable recommendations
     """
     recommendations = []
     
-    if not results or not sentiment_summary:
+    if not results:
         return recommendations
     
-    # Analyze sentiment to provide recommendations
     positive_pct = sentiment_summary.get('positive_percentage', 0)
     negative_pct = sentiment_summary.get('negative_percentage', 0)
-    avg_polarity = sentiment_summary.get('average_polarity', 0)
     
-    # Recommendation 1: Sentiment-based
-    if positive_pct > 70:
-        recommendations.append({
-            'type': 'sentiment',
-            'title': 'Strong Positive Sentiment',
-            'description': f'{positive_pct}% of mentions are positive. Leverage this momentum to amplify your marketing message.',
-            'priority': 'high',
-            'action': 'Increase marketing activities and gather user testimonials'
-        })
-    elif negative_pct > 50:
-        recommendations.append({
-            'type': 'sentiment',
-            'title': 'Negative Sentiment Alert',
-            'description': f'{negative_pct}% of mentions are negative. Address customer concerns and improve product/service quality.',
-            'priority': 'critical',
-            'action': 'Analyze negative feedback and create action plan for improvement'
-        })
-    elif positive_pct > negative_pct:
-        recommendations.append({
-            'type': 'sentiment',
-            'title': 'Balanced Positive Trend',
-            'description': f'Positive mentions ({positive_pct}%) slightly exceed negative ({negative_pct}%). Maintain current efforts.',
-            'priority': 'medium',
-            'action': 'Continue monitoring and optimize based on feedback'
-        })
+    # Recommendation 1: Crisis Management
+    if negative_pct > 50:
+        top_issues = extract_problems_and_complaints(results)
+        if top_issues:
+            issue = top_issues[0]['issue']
+            recommendations.append({
+                'title': '🚨 Crisis Management Action Required',
+                'description': f"High negative sentiment detected ({negative_pct}%). The main issue is '{issue}'.",
+                'action': f'Immediately: Create a response plan to address "{issue}" complaints. Consider refund policy, '
+                         f'product recalls, or service improvements. Respond to complaints publicly within 24 hours.',
+                'priority': 'CRITICAL',
+                'estimated_impact': 'High - Can prevent reputation damage'
+            })
     
-    # Recommendation 2: Engagement-based
-    engagement = calculate_engagement_metrics(results)
-    engagement_score = engagement.get('overall_engagement_score', 0)
-    
-    if engagement_score > 0.7:
+    # Recommendation 2: Quality Improvement
+    top_issues = extract_problems_and_complaints(results)
+    if top_issues and len(top_issues) > 0:
+        issue = top_issues[0]['issue']
         recommendations.append({
-            'type': 'engagement',
-            'title': 'High Engagement Detected',
-            'description': f'Engagement score is {round(engagement_score * 100)}%. Your brand is generating strong interest.',
-            'priority': 'high',
-            'action': 'Scale up campaigns and explore new marketing channels'
-        })
-    elif engagement_score < 0.4:
-        recommendations.append({
-            'type': 'engagement',
-            'title': 'Low Engagement Alert',
-            'description': f'Engagement score is only {round(engagement_score * 100)}%. Consider refreshing your strategy.',
-            'priority': 'medium',
-            'action': 'Review campaign strategy and try new content approaches'
+            'title': '⚡ Address Quality Issues',
+            'description': f'Customer complaint analysis shows "{issue}" is the primary concern.',
+            'action': f'Schedule QA meeting to investigate "{issue}" reports. Allocate engineering resources '
+                     f'to fix this within 2-4 weeks. Set up monitoring for this issue.',
+            'priority': 'HIGH',
+            'estimated_impact': 'High - Improves customer satisfaction'
         })
     
-    # Recommendation 3: Volume-based
-    total_mentions = len(results)
-    if total_mentions > 100:
+    # Recommendation 3: Marketing Amplification
+    if positive_pct > 60:
+        keyword_insights = analyze_sentiment_by_keyword(results)
+        positive_keywords = [(k, v) for k, v in keyword_insights.items() if v['sentiment'] == 'positive']
+        
+        if positive_keywords:
+            main_strength = positive_keywords[0][0]
+            recommendations.append({
+                'title': '📢 Amplify Positive Message',
+                'description': f'Strong positive sentiment ({positive_pct}%) about "{main_strength}".',
+                'action': f'Launch marketing campaign highlighting "{main_strength}" as key selling point. '
+                         f'Collect testimonials and case studies. Create social media content around this strength.',
+                'priority': 'MEDIUM',
+                'estimated_impact': 'Medium - Increases conversions'
+            })
+    
+    # Recommendation 4: Feature Development
+    top_prefs = extract_preferences_and_desires(results)
+    if top_prefs:
+        main_desire = top_prefs[0]['type']
         recommendations.append({
-            'type': 'volume',
-            'title': 'High Mention Volume',
-            'description': f'Your brand received {total_mentions} mentions. You have strong market presence.',
-            'priority': 'high',
-            'action': 'Monitor discussions and engage with your audience'
-        })
-    elif total_mentions < 20:
-        recommendations.append({
-            'type': 'volume',
-            'title': 'Low Mention Volume',
-            'description': f'Only {total_mentions} mentions found. Consider increasing visibility.',
-            'priority': 'medium',
-            'action': 'Increase marketing efforts and improve SEO strategy'
+            'title': '💡 Market-Driven Product Development',
+            'description': f'Customers frequently express desire to "{main_desire}" ({top_prefs[0]["frequency"]} mentions).',
+            'action': f'Add "{main_desire}" to product roadmap. Conduct user interviews to understand exact requirements. '
+                     f'Prioritize this for next sprint/release cycle.',
+            'priority': 'MEDIUM',
+            'estimated_impact': 'High - Directly addresses customer needs'
         })
     
-    # Recommendation 4: Topic-based
-    topics = extract_topics_and_keywords(results)
-    top_keywords = topics.get('top_keywords', [])
-    
-    if top_keywords:
+    # Recommendation 5: Engagement Strategy
+    if positive_pct > negative_pct:
         recommendations.append({
-            'type': 'topics',
-            'title': 'Key Topics Identified',
-            'description': f'Main topics discussed: {", ".join(top_keywords[:3])}. Focus content around these themes.',
-            'priority': 'medium',
-            'action': 'Create targeted content addressing these topics'
+            'title': '👥 Engagement & Community Building',
+            'description': 'Overall sentiment is positive - good opportunity for community engagement.',
+            'action': 'Increase social media engagement: respond to all positive comments, create user-generated content campaigns, '
+                     'host community events or Q&A sessions. Build brand loyalty.',
+            'priority': 'LOW',
+            'estimated_impact': 'Medium - Long-term brand loyalty'
         })
     
     return recommendations
 
+
 def get_comprehensive_insights(results: List[Dict], sentiment_summary: Dict) -> Dict:
     """
-    Generate comprehensive AI insights combining all analyses
-    Main function that orchestrates all insights generation
+    Main function: Generate comprehensive meaningful insights
     """
     if not results:
         return {
@@ -284,30 +365,29 @@ def get_comprehensive_insights(results: List[Dict], sentiment_summary: Dict) -> 
         }
     
     try:
-        # Get all analyses
-        sentiment_trends = analyze_sentiment_trends(results)
-        engagement_metrics = calculate_engagement_metrics(results)
-        topics = extract_topics_and_keywords(results)
-        recommendations = generate_recommendations(results, sentiment_summary)
+        # Generate different types of insights
+        meaningful_insights = generate_meaningful_insights(results, sentiment_summary)
+        recommendations = generate_actionable_recommendations(results, sentiment_summary, {})
         
-        # Compile comprehensive insights
+        keyword_sentiment = analyze_sentiment_by_keyword(results)
+        problems = extract_problems_and_complaints(results)
+        preferences = extract_preferences_and_desires(results)
+        
+        # Compile everything
         insights = {
             'success': True,
             'timestamp': datetime.now().isoformat(),
+            'key_insights': meaningful_insights,  # Main conclusions
+            'sentiment_keywords': keyword_sentiment,  # What's being discussed
+            'main_problems': problems,  # Issues to address
+            'customer_desires': preferences,  # What people want
+            'actionable_recommendations': recommendations,  # What to do
             'summary': {
                 'total_analyzed': len(results),
-                'analysis_type': 'comprehensive',
-                'platforms_included': list(set(r.get('platform', 'unknown') for r in results))
-            },
-            'sentiment_analysis': sentiment_trends,
-            'engagement_analysis': engagement_metrics,
-            'topics_and_keywords': topics,
-            'recommendations': recommendations,
-            'insights_count': len(recommendations),
-            'overall_score': round((
-                sentiment_trends.get('average_polarity', 0) * 0.4 +
-                engagement_metrics.get('overall_engagement_score', 0) * 0.6
-            ), 3)
+                'positive_percentage': sentiment_summary.get('positive_percentage', 0),
+                'negative_percentage': sentiment_summary.get('negative_percentage', 0),
+                'neutral_percentage': sentiment_summary.get('neutral_percentage', 0),
+            }
         }
         
         return insights
