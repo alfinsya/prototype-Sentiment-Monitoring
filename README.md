@@ -88,8 +88,30 @@ monitoring-web/
 - Python 3.8+
 - Node.js 14+
 - MongoDB (local or Atlas)
-- API Keys: YouTube, Twitter, Google
+- API Keys:
+  - **YouTube API** - for video search
+  - **Twitter API v2** - for tweet search
+  - **NewsAPI** (recommended) - for Google News/article search (Free: https://newsapi.org)
+  - **Google Custom Search** (optional) - alternative for news search
 
-## License
+## Getting API Keys
 
-MIT
+### NewsAPI (for Google News results)
+1. Go to https://newsapi.org
+2. Sign up (free account)
+3. Copy your API key
+4. Add to `.env`: `NEWSAPI_KEY=your_key_here`
+
+### YouTube API
+1. Go to https://console.cloud.google.com
+2. Create new project
+3. Enable YouTube Data API v3
+4. Create API key credentials
+5. Add to `.env`: `YOUTUBE_API_KEY=your_key_here`
+
+### Twitter API
+1. Go to https://developer.twitter.com
+2. Apply for developer access
+3. Create app and get Bearer Token
+4. Add to `.env`: `TWITTER_BEARER_TOKEN=your_token_here`
+
