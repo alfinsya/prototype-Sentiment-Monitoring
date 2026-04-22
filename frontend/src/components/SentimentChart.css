@@ -1,0 +1,28 @@
+.sentiment-chart {
+  padding: 20px;
+}
+
+.sentiment-chart h2 {
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px;
+  }
+
+  .sentiment-chart h2 {
+    font-size: 1.2em;
+  }
+}
