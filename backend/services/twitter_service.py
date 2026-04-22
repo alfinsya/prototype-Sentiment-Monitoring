@@ -21,7 +21,11 @@ def search_twitter(keyword, max_results=10):
     Returns list of tweet results with metadata
     """
     if not TWITTER_BEARER_TOKEN:
-        return {'error': 'Twitter Bearer Token not configured'}
+        return {
+            'success': False,
+            'error': 'Twitter Bearer Token not configured',
+            'results': []
+        }
     
     try:
         headers = get_twitter_headers()
@@ -40,7 +44,11 @@ def search_twitter(keyword, max_results=10):
         response = requests.get(url, headers=headers, params=params)
         
         if response.status_code != 200:
-            return {'error': f'Twitter API error: {response.status_code} - {response.text}'}
+            return {
+                'success': False,
+                'error': f'Twitter API error: {response.status_code} - {response.text}',
+                'results': []
+            }
         
         data = response.json()
         
@@ -78,10 +86,18 @@ def search_twitter(keyword, max_results=10):
             }
             results.append(result)
         
-        return {'success': True, 'results': results, 'total': len(results)}
+        return {
+            'success': True,
+            'results': results,
+            'total': len(results)
+        }
         
     except Exception as e:
-        return {'error': f'Unexpected error: {str(e)}'}
+        return {
+            'success': False,
+            'error': f'Unexpected error: {str(e)}',
+            'results': []
+        }
 
 
 def search_twitter_stream(keyword, max_results=10):

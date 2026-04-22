@@ -14,6 +14,10 @@ function ResultsDisplay({ results }) {
         return 'f';
       case 'google_news':
         return '🔎';
+      case 'instagram':
+        return '📷';
+      case 'tiktok':
+        return '🎵';
       default:
         return '📄';
     }
@@ -37,6 +41,7 @@ function ResultsDisplay({ results }) {
   const getSourceName = (result) => {
     if (result.channel) return result.channel;
     if (result.author_name) return result.author_name;
+    if (result.author) return result.author;
     if (result.source) return result.source;
     return 'Unknown Source';
   };

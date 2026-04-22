@@ -3,12 +3,15 @@ import SearchForm from './components/SearchForm';
 import SentimentSummary from './components/SentimentSummary';
 import SentimentChart from './components/SentimentChart';
 import ResultsDisplay from './components/ResultsDisplay';
+import InsightsDisplay from './components/InsightsDisplay';
 import './App.css';
 
 function App() {
   const [results, setResults] = useState([]);
   const [sentimentSummary, setSentimentSummary] = useState(null);
+  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState(['youtube', 'twitter', 'facebook', 'google']);
 
@@ -17,6 +20,7 @@ function App() {
     setError(null);
     setResults([]);
     setSentimentSummary(null);
+    setInsights(null);
 
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/search`, {
@@ -46,6 +50,11 @@ function App() {
         if (data.errors && data.errors.length > 0) {
           console.warn('API Warnings:', data.errors);
         }
+
+        // Fetch insights after successful search
+        if (data.results && data.sentiment_summary) {
+          fetchInsights(data.results, data.sentiment_summary);
+        }
       } else {
         setError(data.error || 'Search failed');
       }
@@ -54,6 +63,38 @@ function App() {
       console.error('Search error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInsights = async (searchResults, sentimentSummary) => {
+    setInsightsLoading(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/insights`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          results: searchResults,
+          sentiment_summary: sentimentSummary,
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn('Insights API error:', response.status);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setInsights(data);
+      }
+    } catch (err) {
+      console.warn('Error fetching insights:', err.message);
+      // Don't show error to user, insights are optional
+    } finally {
+      setInsightsLoading(false);
     }
   };
 
@@ -100,6 +141,9 @@ function App() {
                 <SentimentChart data={sentimentSummary} />
               </div>
             </div>
+
+            {/* AI Insights */}
+            <InsightsDisplay insights={insights} loading={insightsLoading} />
 
             {/* Results Display */}
             <div className="results-box">

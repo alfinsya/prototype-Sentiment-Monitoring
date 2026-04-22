@@ -16,7 +16,11 @@ def search_google(keyword, max_results=10):
     Note: Requires Custom Search Engine setup
     """
     if not GOOGLE_SEARCH_API_KEY:
-        return {'error': 'Google Search API key not configured'}
+        return {
+            'success': False,
+            'error': 'Google Search API key not configured',
+            'results': []
+        }
     
     try:
         params = {
@@ -33,7 +37,11 @@ def search_google(keyword, max_results=10):
         response = requests.get(BASE_URL, params=params)
         
         if response.status_code != 200:
-            return {'error': f'Google API error: {response.status_code}'}
+            return {
+                'success': False,
+                'error': f'Google API error: {response.status_code}',
+                'results': []
+            }
         
         data = response.json()
         
@@ -51,10 +59,18 @@ def search_google(keyword, max_results=10):
             }
             results.append(result)
         
-        return {'success': True, 'results': results, 'total': len(results)}
+        return {
+            'success': True,
+            'results': results,
+            'total': len(results)
+        }
         
     except Exception as e:
-        return {'error': f'Unexpected error: {str(e)}'}
+        return {
+            'success': False,
+            'error': f'Unexpected error: {str(e)}',
+            'results': []
+        }
 
 
 def search_google_news_fallback(keyword, max_results=10):

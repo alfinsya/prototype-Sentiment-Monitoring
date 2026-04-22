@@ -15,7 +15,11 @@ def search_facebook_posts(keyword, max_results=10):
     Note: Limited access, only public posts and pages you manage
     """
     if not FACEBOOK_ACCESS_TOKEN:
-        return {'error': 'Facebook Access Token not configured'}
+        return {
+            'success': False,
+            'error': 'Facebook Access Token not configured',
+            'results': []
+        }
     
     try:
         # Search in public posts (limited functionality)
@@ -32,7 +36,11 @@ def search_facebook_posts(keyword, max_results=10):
         response = requests.get(url, params=params)
         
         if response.status_code != 200:
-            return {'error': f'Facebook API error: {response.status_code} - {response.text}'}
+            return {
+                'success': False,
+                'error': f'Facebook API error: {response.status_code} - {response.text}',
+                'results': []
+            }
         
         data = response.json()
         
@@ -51,10 +59,18 @@ def search_facebook_posts(keyword, max_results=10):
             }
             results.append(result)
         
-        return {'success': True, 'results': results, 'total': len(results)}
+        return {
+            'success': True,
+            'results': results,
+            'total': len(results)
+        }
         
     except Exception as e:
-        return {'error': f'Unexpected error: {str(e)}'}
+        return {
+            'success': False,
+            'error': f'Unexpected error: {str(e)}',
+            'results': []
+        }
 
 
 def get_facebook_page_posts(page_id, max_results=10):

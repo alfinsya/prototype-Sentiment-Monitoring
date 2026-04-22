@@ -9,7 +9,10 @@ from services.youtube_service import search_youtube
 from services.twitter_service import search_twitter
 from services.facebook_service import search_facebook_posts
 from services.google_service import search_google
+from services.instagram_service import search_instagram_posts
+from services.tiktok_service import search_tiktok
 from services.sentiment_service import analyze_sentiment, analyze_sentiments_batch, get_sentiment_summary
+from services.insights_service import get_comprehensive_insights
 from services.dummy_data import get_dummy_tweets, get_dummy_facebook_posts, get_dummy_google_results
 
 # Load environment variables
@@ -89,6 +92,20 @@ def search():
                 all_results.extend(dummy_result.get('results', []))
                 errors.append(f"Google: Using mock data (API error: {google_result.get('error', 'Unknown')})")
         
+        if 'instagram' in platforms:
+            instagram_result = search_instagram_posts(keyword, max_results)
+            if instagram_result.get('success'):
+                all_results.extend(instagram_result.get('results', []))
+            else:
+                errors.append(f"Instagram: {instagram_result.get('error', 'Unknown error')}")
+        
+        if 'tiktok' in platforms:
+            tiktok_result = search_tiktok(keyword, max_results)
+            if tiktok_result.get('success'):
+                all_results.extend(tiktok_result.get('results', []))
+            else:
+                errors.append(f"TikTok: {tiktok_result.get('error', 'Unknown error')}")
+        
         # Analyze sentiment for text content
         for result in all_results:
             text_to_analyze = result.get('text', result.get('description', ''))
@@ -166,18 +183,33 @@ def sentiment_batch():
     except Exception as e:
         return jsonify({'error': f'Batch sentiment analysis failed: {str(e)}'}), 500
 
-@app.route('/api/insights', methods=['GET'])
+@app.route('/api/insights', methods=['POST'])
 def insights():
     """
-    Get AI insights based on search results
+    Generate comprehensive AI insights based on search results
+    Body: {
+        "results": [...search results from /api/search...],
+        "sentiment_summary": {...sentiment summary...}
+    }
     """
     try:
-        # TODO: Implement advanced AI insights
-        # For now, return placeholder
+        data = request.get_json()
+        results = data.get('results', [])
+        sentiment_summary = data.get('sentiment_summary')
+        
+        if not results:
+            return jsonify({'error': 'Results array is required'}), 400
+        
+        if not sentiment_summary:
+            return jsonify({'error': 'Sentiment summary is required'}), 400
+        
+        # Generate comprehensive insights
+        insights = get_comprehensive_insights(results, sentiment_summary)
+        
         return jsonify({
-            'message': 'AI insights - coming soon',
-            'features': ['sentiment trends', 'engagement analysis', 'topic extraction', 'recommendations']
-        }), 200
+            'success': insights.get('success', True),
+            'insights': insights
+        }), 200 if insights.get('success') else 400
         
     except Exception as e:
         return jsonify({'error': f'Insights generation failed: {str(e)}'}), 500

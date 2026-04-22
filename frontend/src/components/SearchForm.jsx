@@ -9,6 +9,8 @@ function SearchForm({ onSearch, loading }) {
     twitter: true,
     facebook: true,
     google: true,
+    instagram: true,
+    tiktok: true,
   });
 
   const handlePlatformChange = (platform) => {
@@ -46,7 +48,7 @@ function SearchForm({ onSearch, loading }) {
         <div className="platforms-group">
           <label className="label">Platforms:</label>
           <div className="platform-checkboxes">
-            {['youtube', 'twitter', 'facebook', 'google'].map(platform => (
+            {['youtube', 'twitter', 'facebook', 'google', 'instagram', 'tiktok'].map(platform => (
               <label key={platform} className="platform-label">
                 <input
                   type="checkbox"
@@ -60,6 +62,8 @@ function SearchForm({ onSearch, loading }) {
                   {platform === 'twitter' && '𝕏 Twitter'}
                   {platform === 'facebook' && 'f Facebook'}
                   {platform === 'google' && '🔎 Google'}
+                  {platform === 'instagram' && '📷 Instagram'}
+                  {platform === 'tiktok' && '🎵 TikTok'}
                 </span>
               </label>
             ))}
