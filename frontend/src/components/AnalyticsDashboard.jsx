@@ -21,7 +21,7 @@ function AnalyticsDashboard({ results, sentimentSummary, isLoading }) {
       {/* Row 1: Sentiment Overview + Platform Distribution */}
       <div className="analytics-grid-row">
         <div className="grid-col col-1">
-          <SentimentChart sentimentSummary={sentimentSummary} />
+          <SentimentChart data={sentimentSummary} />
         </div>
         <div className="grid-col col-1">
           <PlatformDistributionChart results={results} />
